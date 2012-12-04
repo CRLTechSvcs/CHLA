@@ -1,0 +1,983 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>CHLA Issue Grid</title>
+		<link rel="stylesheet" media="screen and (min-width: 760px) and (max-width: 960px)" href="issue_grid_stylesheet_tiny.css" />
+		<link rel="stylesheet" media="screen and (min-width: 970px) and (max-width: 1024px)" href="issue_grid_stylesheet_narrow.css" />
+		<link rel="stylesheet" media="screen and (min-width: 1100px) and (max-width: 1600px)" href="issue_grid_stylesheet_medium.css" />
+		<link rel="stylesheet" media="screen and (min-width: 1680px)" href="issue_grid_stylesheet_wide.css" />
+		<link rel="shortcut icon" href="favicon.ico">
+		<script type="text/javascript" src="../../includes/jquery-1.4.4.min.js"></script>
+		<script type="text/javascript" src="../../includes/jquery-ui-1.8.9.custom.min.js"></script>
+		<script type="text/javascript" src="../../includes/jquery.paginatetable.js"></script>
+		<script type="text/javascript" src="../../includes/number-functions.js"></script>
+		<script type="text/javascript">
+			var journalTitle = journalCode = issn = publicationStatus = collectStatus = null;
+			var tableHead = tableBody = null;
+			var selectedCRLJournalId = selectedCHLAJournalId = selectedIssue = proceed = selectedRow = tempSelectedCell = null;
+			var CRLjournalIdParam = CHLAjournalIdParam = null;
+			var numberHeld = numberWanted = numberTBD = totalIssues = percentHeld = percentWanted = percentTBD = 0;
+			var selectedIssues = [];
+			var disciplines = [];
+			var collections = [];
+			var disciplineString = "";	
+			var collectionString = "";
+			var queryStringParams = new Array();
+			var paginateFlag = false;
+			var TBD_flag = false;
+			function init() {
+				var isMouseDown = false;
+				$('#note_checkbox').attr('checked', false);
+				//Select title by CHLA journal_id or CRL journal_id
+				if (window.location.search) {
+					$('#journal_title_searchbox').val('                           --------');
+					parseQueryString();
+					CRLjournalIdParam = queryStringParams["CRLjournalId"];
+					CHLAjournalIdParam = queryStringParams["CHLAjournalId"];
+					if (CRLjournalIdParam) {
+						selectedCRLJournalId = CRLjournalIdParam;
+						$.get("get_issue_grid_reversible.php", { "CRLjournalId": selectedCRLJournalId, "reverse": false }, displayIssueGrid);
+					} else if (CHLAjournalIdParam) {
+						selectedCHLAJournalId = CHLAjournalIdParam;
+						$.get("get_issue_grid_reversible.php", { "CHLAjournalId": selectedCHLAJournalId, "reverse": false }, displayIssueGrid);
+					}
+				}
+				$("#go_button").click(function() {
+					if (!selectedCRLJournalId && !selectedCHLAJournalId)
+						alert("Please select a journal title.");
+					else {
+						paginateFlag = false;
+						if ($('#reverse_checkbox').attr('checked') == false) {
+							$.get("get_issue_grid_reversible.php", { "CRLjournalId": selectedCRLJournalId, "reverse": false }, displayIssueGrid);
+						} else {
+							$.get("get_issue_grid_reversible.php", { "CRLjournalId": selectedCRLJournalId, "reverse": true }, displayIssueGrid);
+						}
+						$("#paging_label").css ("visibility", "hidden");
+						$(".currentPage").css ("visibility", "hidden");
+						$(".totalPages").css ("visibility", "hidden");
+						$("#barchart").css ("visibility", "hidden");
+						$("#crl_holds_bar").html("");
+						$("#previous_button").attr('disabled', true);
+						$("#next_button").attr('disabled', true);
+						$('#legend').css('display', 'none');
+						TBD_flag = false;
+					}
+				});
+				$("#clear_button").click(function() {
+					window.location.search = "";
+					$("#paging_label").css ("visibility", "hidden");
+					$("#journal_title_searchbox").val("");
+					$("#journal_title").html("");
+					$("#crl_journal_id").html("");
+					$("#chla_journal_id").html("");
+					$("#author").html("");
+					$("#place_of_publication").html("");
+					$("#published_by").html("");
+					$("#percent_held").html("");
+					$("#journal_info_table").css ("visibility", "hidden");
+					$("#issue_count_table").css ("visibility", "hidden");
+					$('#legend').css('display', 'none');
+					$("#journal_title_searchbox").focus();
+					TBD_flag = false;
+					selectedCRLJournalId = null;
+					tableHead = document.getElementById('issue_grid_table_head');
+					if (tableHead) {
+						while (tableHead.hasChildNodes()) {
+							tableHead.removeChild(tableHead.firstChild);
+						}
+					}
+					tableBody = document.getElementById('issue_grid_table_body');
+					if (tableBody) {
+						while (tableBody.hasChildNodes()) {
+							tableBody.removeChild(tableBody.firstChild);
+						}
+					}
+				});
+				$("#all_radio").click(function() {
+				});
+				$("#selected_radio").click(function() {
+
+				});
+				$("#hold_button").click(function() {
+					if (!selectedCRLJournalId && !selectedCHLAJournalId) {
+						alert("Please select a journal title.");
+					} else {
+						if ($('#all_radio').attr('checked')===true) {						
+							proceed = confirm("You are about to change the holding status for all issues of this journal.  Continue?");
+							if (proceed == true) {
+								$("#show_all_radio").attr('checked', true);
+								if (CRLjournalIdParam) {
+									selectedCRLJournalId = CRLjournalIdParam;
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("hold_all_issues_reversible.php", { "CRLjournalId": selectedCRLJournalId, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("hold_all_issues_reversible.php", { "CRLjournalId": selectedCRLJournalId, "reverse": true }, displayIssueGrid);
+									}
+								} else if (CHLAjournalIdParam) {
+									selectedCHLAJournalId = CHLAjournalIdParam;
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("hold_all_issues_reversible.php", { "CHLAjournalId": selectedCHLAJournalId, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("hold_all_issues_reversible.php", { "CHLAjournalId": selectedCHLAJournalId, "reverse": true }, displayIssueGrid);
+									}
+								} else {
+									//No query string, so use selectedCRLJournalId from autocomplete control
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("hold_all_issues_reversible.php", { "CRLjournalId": selectedCRLJournalId, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("hold_all_issues_reversible.php", { "CRLjournalId": selectedCRLJournalId, "reverse": true }, displayIssueGrid);
+									}
+								}
+								selectedIssues = [];
+							}
+						} else if ($('#selected_radio').attr('checked')===true) {
+							if (selectedIssues.length == 0) {
+								alert("Please select at least one issue cell.");
+							} else {
+								if (paginateFlag == false) {
+									//Callback will refresh entire grid
+									if (journalIdParam) {										
+										selectedJournalId = journalIdParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									} else if (journalCodeParam) {
+										selectedJournalCode = journalCodeParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("hold_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("hold_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									} else {
+										//No query string, so use selectedJournalId from autocomplete control
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									}
+									selectedIssues = [];
+								} else if (paginateFlag == true) {
+									//Callback will change background color of cell without refreshing grid display, so pagination is preserved
+									if (journalIdParam) {
+										selectedJournalId = journalIdParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("hold"));
+										} else {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("hold"));
+										}
+									} else if (journalCodeParam) {
+										selectedJournalCode = journalCodeParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("hold_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("hold"));
+										} else {
+											$.get("hold_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("hold"));
+										}
+									} else {
+										//No query string, so use selectedJournalId from autocomplete control
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("hold"));
+										} else {
+											$.get("hold_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("hold"));
+										}
+									}
+								}
+							}
+						}
+					}
+				});
+				$("#want_button").click(function() {
+					if (!selectedJournalId && !selectedJournalCode) {
+						alert("Please select a journal title.");
+					} else {
+						if ($('#all_radio').attr('checked')===true) {
+							proceed = confirm("You are about to change the holding status for all issues of this journal.  Continue?");
+							if (proceed == true) {
+								$("#show_all_radio").attr('checked', true);
+								if (journalIdParam) {
+									selectedJournalId = journalIdParam;
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("want_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("want_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+									}
+								} else if (journalCodeParam) {
+									selectedJournalCode = journalCodeParam;
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("want_all_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("want_all_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": true }, displayIssueGrid);
+									}
+								} else {
+									//No query string, so use selectedJournalId from autocomplete control
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("want_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("want_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+									}
+								}
+								selectedIssues = [];
+							}
+						} else if ($('#selected_radio').attr('checked')===true) {
+							if (selectedIssues.length == 0) {
+								alert("Please select at least one issue cell.");
+							} else {
+								if (paginateFlag == false) {
+									//Callback will refresh entire grid
+									if (journalIdParam) {
+										selectedJournalId = journalIdParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									} else if (journalCodeParam) {
+										selectedJournalCode = journalCodeParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("want_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("want_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									} else {
+										//No query string, so use selectedJournalId from autocomplete control
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									}
+									selectedIssues = [];
+								} else if (paginateFlag == true) {
+									//Callback will change background color of cell without refreshing grid display, so pagination is preserved
+									if (journalIdParam) {
+										selectedJournalId = journalIdParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("want"));
+										} else {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("want"));
+										}
+									} else if (journalCodeParam) {
+										selectedJournalCode = journalCodeParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("want_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("want"));
+										} else {
+											$.get("want_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("want"));
+										}
+									} else {
+										//No query string, so use selectedJournalId from autocomplete control
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("want"));
+										} else {
+											$.get("want_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("want"));
+										}
+									}
+								}	
+							}
+						}
+					}
+				});
+				$("#clear_status_button").click(function() {
+					if (!selectedJournalId && !selectedJournalCode) {
+						alert("Please select a journal title.");
+					} else {
+						if ($('#all_radio').attr('checked')===true) {
+							proceed = confirm("You are about to change the holding status for all issues of this journal.  Continue?");
+							if (proceed == true) {
+								$("#show_all_radio").attr('checked', true);
+								if (journalIdParam) {
+									selectedJournalId = journalIdParam;
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("clear_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("clear_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+									}
+								} else if (journalCodeParam) {
+									selectedJournalCode = journalCodeParam;
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("clear_all_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("clear_all_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": true }, displayIssueGrid);
+									}
+								} else {
+									//No query string, so use selectedJournalId from autocomplete control
+									if ($('#reverse_checkbox').attr('checked') == false) {
+										$.get("clear_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+									} else {
+										$.get("clear_all_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+									}
+								}
+								selectedIssues = [];
+							}
+						} else if ($('#selected_radio').attr('checked')===true) {
+							if (selectedIssues.length == 0) {
+								alert("Please select at least one issue cell.");
+							} else {
+								if (paginateFlag == false) {
+									//Callback will refresh entire grid
+									if (journalIdParam) {
+										selectedJournalId = journalIdParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									} else if (journalCodeParam) {
+										selectedJournalCode = journalCodeParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("clear_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("clear_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									} else {
+										//No query string, so use selectedJournalId from autocomplete control
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": false }, displayIssueGrid);
+										} else {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "selectedIssues": selectedIssues, "reverse": true }, displayIssueGrid);
+										}
+									}
+									selectedIssues = [];
+								} else if (paginateFlag == true) {
+									//Callback will change background color of cell without refreshing grid display, so pagination is preserved
+									if (journalIdParam) {
+										selectedJournalId = journalIdParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("clear"));
+										} else {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("clear"));
+										}
+									} else if (journalCodeParam) {
+										selectedJournalCode = journalCodeParam;
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("clear_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("clear"));
+										} else {
+											$.get("clear_selected_issues_reversible.php", { "journalCode": selectedJournalCode, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("clear"));
+										}
+									} else {
+										//No query string, so use selectedJournalId from autocomplete control
+										if ($('#reverse_checkbox').attr('checked') == false) {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": false, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("clear"));
+										} else {
+											$.get("clear_selected_issues_reversible.php", { "journalId": selectedJournalId, "reverse": true, "selectedIssues": selectedIssues }, changeSelectedCellAppearance("clear"));
+										}
+									}
+								}	
+							}
+						}
+					}
+				});
+				$("#deselect_button").click(function() {
+					if (!selectedCRLJournalId && !selectedCHLAJournalId) {
+						alert("Please select a journal title.");
+					} else {
+						for (var i = 0; i < selectedIssues.length; i++) {
+							tempSelectedCell = document.getElementById(selectedIssues[i]);
+							if (tempSelectedCell.className.search('promised') == -1) {
+								tempSelectedCell.style.color = "#37375E";
+								tempSelectedCell.style.fontWeight = "normal";
+							} else {
+								tempSelectedCell.style.color ="#FFFFFF";
+							}
+						}
+					}
+					selectedIssues = [];
+					TBD_flag = false;
+				});
+				$("#paginate_radio").click(function() {
+					paginateFlag = true;
+					$("#paging_label").css ("visibility", "visible");
+					$(".currentPage").css ("visibility", "visible");
+					$(".totalPages").css ("visibility", "visible");
+					$("#previous_button").attr('disabled', false);
+					$("#next_button").attr('disabled', false);
+					$('#issue_grid_table').paginateTable({ rowsPerPage: 12 });
+					$("#issue_grid_table").trigger("update");
+				});
+				$("#show_all_radio").click(function() {
+					paginateFlag = false;
+					$("#paging_label").css ("visibility", "hidden");
+					$(".currentPage").css ("visibility", "hidden");
+					$(".totalPages").css ("visibility", "hidden");
+					$("#previous_button").attr('disabled', true);
+					$("#next_button").attr('disabled', true);
+					if (journalIdParam) {
+						selectedJournalId = journalIdParam;
+						if ($('#reverse_checkbox').attr('checked') == false) {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+						} else {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+						}
+					} else if (journalCodeParam) {
+						selectedJournalCode = journalCodeParam;
+						if ($('#reverse_checkbox').attr('checked') == false) {
+							$.get("get_issue_grid_reversible.php", { "journalCode": selectedJournalCode, "reverse": false }, displayIssueGrid);
+						} else {
+							$.get("get_issue_grid_reversible.php", { "journalCode": selectedJournalCode, "reverse": true }, displayIssueGrid);
+						}
+					} else {
+						//No query string, so use selectedJournalId from autocomplete control
+						if ($('#reverse_checkbox').attr('checked') == false) {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+						} else {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+						}
+					}
+				});
+				$("#note_checkbox").click(function() {
+					if ($(this).is(':checked')) {
+						$('#condition_dialog').addClass('rolled_down');
+						$('#note_textbox').css('display', 'block');
+					} else {
+						$('#condition_dialog').removeClass('rolled_down');
+						$('#note_textbox').css('display', 'none');
+					}
+				});
+				$("#reverse_checkbox").click(function() {
+					$("#show_all_radio").removeAttr("checked");
+					$("#paginate_radio").removeAttr("checked");
+					paginateFlag = false;
+					$("#paging_label").css ("visibility", "hidden");
+					$(".currentPage").css ("visibility", "hidden");
+					$(".totalPages").css ("visibility", "hidden");
+					$("#previous_button").attr('disabled', true);
+					$("#next_button").attr('disabled', true);
+					if (journalIdParam) {
+						selectedJournalId = journalIdParam;
+						if ($('#reverse_checkbox').attr('checked') == false) {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+						} else {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+						}
+					} else if (journalCodeParam) {
+						selectedJournalCode = journalCodeParam;
+						if ($('#reverse_checkbox').attr('checked') == false) {
+							$.get("get_issue_grid_reversible.php", { "journalCode": selectedJournalCode, "reverse": false }, displayIssueGrid);
+						} else {
+							$.get("get_issue_grid_reversible.php", { "journalCode": selectedJournalCode, "reverse": true }, displayIssueGrid);
+						}
+					} else {
+						//No query string, so use selectedJournalId from autocomplete control
+						if ($('#reverse_checkbox').attr('checked') == false) {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": false }, displayIssueGrid);
+						} else {
+							$.get("get_issue_grid_reversible.php", { "journalId": selectedJournalId, "reverse": true }, displayIssueGrid);
+						}
+					}
+				});
+				//Add issue cell to selected array
+				$("table").delegate('td.issue_cell, td.crl_holds, td.crl_does_not_hold', 'click', function(event) { 
+					if (document.getElementById("all_radio").checked) {
+						document.getElementById("selected_radio").checked = "checked";
+					}
+					if (this.className == 'issue_cell') {
+						TBD_flag = true;
+					}
+					selectedIssue = this.id;
+					this.style.fontWeight = "bold";
+					this.style.color = "#FF0000";
+					selectedIssues.push(selectedIssue);
+				});
+				//Select issue condition problem
+				$("table").delegate('td.crl_holds', 'mousedown', function(event) {
+					if (event.which === 3) {
+						//Disable normal right-click menu
+						this.oncontextmenu = function() {
+							return false;
+						};
+						$('#condition_dialog').css('display', 'block');
+					}
+				});
+				$("table").delegate('.header_column', 'mousedown', function(event) {
+					//Add row of issue cells to selected array
+					isMouseDown = true;					
+					if (document.getElementById("all_radio").checked) {
+						document.getElementById("selected_radio").checked = "checked";
+					}
+					selectedRow = $(this).parent().get(0);
+					tempSelectedCell = selectedRow.children[2];
+					for (var i = 0; i < selectedRow.children.length - 2; i++) {
+						if (selectedRow.children[i + 2].className == "issue_cell") {
+							TBD_flag = true;
+						}
+						if (selectedRow.children[i + 2].id) {
+							selectedRow.children[i + 2].style.fontWeight = "bold";
+							selectedRow.children[i + 2].style.color = "#FF0000";
+							selectedIssues.push(selectedRow.children[i + 2].id);
+						}
+					}
+					selectedRow = null;
+					tempSelectedCell = null;
+          			return false; // prevent text selection
+				});
+				$("table").delegate('.header_column', 'mouseover', function(event) {
+					//Add row of issue cells to selected array
+					if (isMouseDown) {						
+						if (document.getElementById("all_radio").checked) {
+							document.getElementById("selected_radio").checked = "checked";
+					}
+					selectedRow = $(this).parent().get(0);
+					tempSelectedCell = selectedRow.children[2];
+					for (var i = 0; i < selectedRow.children.length - 2; i++) {
+						if (this.className == 'issue_cell') {
+							TBD_flag = true;
+						}
+						if (selectedRow.children[i + 2].id) {
+							selectedRow.children[i + 2].style.fontWeight = "bold";
+							selectedRow.children[i + 2].style.color = "#FF0000";
+							selectedIssues.push(selectedRow.children[i + 2].id);
+						}
+					}
+					selectedRow = null;
+					tempSelectedCell = null;
+						
+         		 	}
+				});
+				$(document).mouseup(function () {
+					isMouseDown = false;
+        		});
+				$("#journal_title_searchbox").autocomplete({
+					source: "journal_title_search.php",
+					minLength: 2,
+					//Autocomplete 'select' event fires when matched journal title is selected
+					//Save CRL journal ID
+					select: function( event, ui ) {
+						selectedCRLJournalId = ui.item.id;
+						$("#paging_label").css ("visibility", "hidden");
+						$(".currentPage").css ("visibility", "hidden");
+						$(".totalPages").css ("visibility", "hidden");
+						paginateFlag = false;
+						$("#show_all_radio").attr('checked', true);
+						$("#previous_button").attr('disabled', true);
+						$("#next_button").attr('disabled', true);
+					},
+					//Autocomplete 'close' event fires whenever autocomplete input loses focus.
+					//I'm not sure anything should happen here, since I want to rely on Go button
+					//If match was found, pass journal ID found above and issue grid will be populated.
+					//If no match was found, pass empty string as journal ID and control will be populated with all journal titles.
+					close: function(event, ui) {
+					}
+				});
+				$("#journal_title_searchbox").focus(function(){
+					// Select input field contents
+					this.select();
+				});
+				$("#view_legend").click(function() {
+					$(this).css('display', 'none');
+					$('#legend').css('display', 'block');
+				});
+				$("#close_dialog_button").click(function() {
+					$('#condition_dialog').css('display', 'none');<div></div>
+				});
+				$("#close_button").click(function() {
+					$('#legend').css('display', 'none');
+					$('#view_legend').css('display', 'block');
+				});
+				$("#selected_radio").attr('checked', true);
+				$("#show_all_radio").attr('checked', false);
+				$("#reverse_checkbox").attr('checked', false);
+				$("#paging_label").css ("visibility", "hidden");
+			}
+			function addCommas(nStr) {
+				nStr += '';
+				x = nStr.split('.');
+				x1 = x[0];
+				x2 = x.length > 1 ? '.' + x[1] : '';
+				var rgx = /(\d+)(\d{3})/;
+				while (rgx.test(x1)) {
+					x1 = x1.replace(rgx, '$1' + ',' + '$2');
+				}
+				return x1 + x2;
+			}
+			function displayIssueGrid(results, textStatus) {			
+				var tempRow = null, tempTh = null, tempCell = null;
+				var issueId = year = extraChron = firstLevel = firstLevelNum = secondLevel = secondLevelNum = chlaHolds = chlaWants = null;
+				var tempYear = tempFirstLevelString = null;
+				var i = j = 0;
+				var tempIssueCount = issueCount = maxColumns = headerSpan = 0;
+				var data = JSON.parse(results);
+				tableHead = document.getElementById('issue_grid_table_head');
+				if (tableHead) {
+						while (tableHead.hasChildNodes()) {
+							tableHead.removeChild(tableHead.firstChild);
+						}
+					}
+				tableBody = document.getElementById('issue_grid_table_body');
+				if (tableBody) {
+					while (tableBody.hasChildNodes()) {
+						tableBody.removeChild(tableBody.firstChild);
+					}
+				}
+				journalTitle = data.journalTitle;
+				crlJournalId = data.crlJournalId;
+				chlaJournalId = data.chlaJournalId;
+				author = data.author;
+				placeOfPublication = data.placeOfPublication;			
+				publishedBy = data.publishedBy;
+				numberHeld = data.holdIssuesCount;
+				numberWanted = data.wantIssuesCount;
+				numberTBD = data.TBDIssuesCount;
+				totalIssues = data.allIssuesCount;
+				maxColumns = data.maxColumns;
+				$('#journal_title').html(journalTitle);
+				$('#crl_journal_id').html(crlJournalId);
+				$('#chla_journal_id').html(chlaJournalId);
+				$('#author').html(author);
+				$('#place_of_publication').html(placeOfPublication);
+				$('#published_by').html(publishedBy);
+				tempRow = document.createElement("tr");
+				tempTh = document.createElement("th");
+				tempTh.appendChild(document.createTextNode("Year"));
+				tempRow.appendChild(tempTh);
+				tempTh = document.createElement("th");
+				tempTh.appendChild(document.createTextNode("Volume"));
+				tempRow.appendChild(tempTh);
+				tempTh = document.createElement("th");
+				headerSpan = maxColumns - 2;
+				tempTh.colSpan = toString(headerSpan);
+				tempTh.appendChild(document.createTextNode("Issues"));
+				tempRow.appendChild(tempTh);
+				tableHead.appendChild(tempRow);
+				if (totalIssues != 0) {
+					while(data.issues[i]) {
+						year = data.issues[i][0];
+						firstLevelString = data.issues[i][1];
+						tempRow = document.createElement("tr");
+						tempCell = document.createElement("td");
+						tempCell.appendChild(document.createTextNode(year));
+						tempCell.className = "header_column";
+						tempCell.id = year;
+						tempRow.appendChild(tempCell);
+						tempCell = document.createElement("td");
+						tempCell.appendChild(document.createTextNode(firstLevelString));
+						tempCell.className = "header_column";
+						tempRow.appendChild(tempCell);
+						//Subtract three - first three elements of every 'issues' element are year, volume description, and extra chron
+						tempIssueCount = data.issues[i].length - 3;
+						//Each individual issue in 'issues' element has four components: issueId, extraChron, secondLevelString, and chlaHolds
+						for (j = 0; j < tempIssueCount; j=j+4) {
+							issueId = data.issues[i][j+2];
+							//console.log('issueId=' + issueId);
+							extraChron = data.issues[i][j+3];
+							secondLevelString = data.issues[i][j+4];
+							//console.log('secondLevelString=' + secondLevelString);
+							chlaHolds = data.issues[i][j+5];
+							//console.log('crlHolds=' + crlHolds);
+							tempCell = document.createElement("td");
+							tempCell.className = "issue_cell";
+							tempCell.id = issueId;
+							tempCell.title = extraChron;
+							tempCell.appendChild(document.createTextNode(secondLevelString));
+							if (chlaHolds == "yes") {
+								chla_holds(tempCell, promised);
+							} else if (chlaHolds == "no") {
+								chla_does_not_hold(tempCell, promised);
+							}
+							tempRow.appendChild(tempCell);
+							if ( (tempIssueCount/3) < maxColumns) {
+								if (j == tempIssueCount - 3) {
+									tempCell = document.createElement("td");
+									tempCell.colSpan = toString(maxColumns - tempIssueCount);
+									tempCell.className = "blank_cell";
+									tempRow.appendChild(tempCell);
+								}
+							}
+						}
+						if (tempIssueCount == (maxColumns - 2)) {
+							tempCell.className = "last_issue_cell";
+						}
+						tableBody.appendChild(tempRow);
+						i++;
+						issueCount += tempIssueCount;
+					}
+				}
+				if (paginateFlag == true) {
+					$("#paging_label").css ("visibility", "visible");
+				}
+				
+				percentHeld = numberHeld/totalIssues;
+				percentHeld = percentHeld.numberFormat("0.0%");
+				percentWanted = numberWanted/totalIssues;
+				percentWanted = percentWanted.numberFormat("0.0%");
+				percentTBD = numberTBD/totalIssues;
+				percentTBD = percentTBD.numberFormat("0.0%");
+				
+				//Create bar chart
+				$('#crl_holds_bar').css("visibility", "visible").css("width", 0).html("");
+				$('#crl_wants_bar').css("visibility", "visible").css("width", 0).html("");
+				$('#tbd_bar').css("visibility", "visible").css("width", 0).css("padding", 0).html("");
+				if (publicationStatus == "9") {
+					//If pamphlet, display 'CRL does not collect' message in white bar and suppress other bars
+					$('#tbd_bar').html("CRL DOES NOT COLLECT BRITISH PAMPHLETS").css("borderLeft", "1px dotted #85887F").css("padding", "0 5px").css("width", "96%");
+					$('#crl_holds_bar').css("visibility", "hidden");
+					$('#crl_wants_bar').css("visibility", "hidden");
+				} else if (percentHeld == "100.0%") {
+					//If we hold all available CHLA issues and title has ceased publication, merged, is not yet released, or if CHLA coverage has ended,
+					//display 'CRL holdings are complete' message in green bar,
+					//suppress other bars.
+					if ((publicationStatus == "1") || (publicationStatus == "2") || (publicationStatus == "7") || (publicationStatus == "8")) {
+							$('#crl_holds_bar').html("CRL HOLDINGS ARE COMPLETE");
+							$('#crl_wants_bar').css("visibility", "hidden");
+							$('#tbd_bar').css("visibility", "hidden").css("padding", "0px");
+					} else {
+						//We hold all available CHLA issues, but journal is a fixed or moving wall title and other issues will be added.
+						//Don't display a message in green bar.
+						//Suppress other bars.
+						$('#crl_holds_bar').html("");
+						$('#crl_wants_bar').css("visibility", "hidden");
+						$('#tbd_bar').css("visibility", "hidden");
+					}
+					//Width reduced by 1% to allow for left and right borders
+					$('#crl_holds_bar').width((numberHeld/totalIssues*99)+"%");
+				} else {
+					//No special holdings message to display.
+					//Compute bar widths normally.
+					$('#crl_holds_bar').width((numberHeld/totalIssues*99)+"%");
+					$('#crl_wants_bar').width((numberWanted/totalIssues*99)+"%");
+					$('#tbd_bar').width((numberTBD/totalIssues*99)+"%").css("padding", "0px 0px").css("borderLeft", 0);
+				}				
+				//Populate issue count table
+				$('#held_issue_count').html(addCommas(numberHeld));
+				$('#held_issue_percent').html(percentHeld);
+				$('#wanted_issue_count').html(addCommas(numberWanted));
+				$('#wanted_issue_percent').html(percentWanted);
+				$('#tbd_issue_count').html(addCommas(numberTBD));
+				$('#tbd_issue_percent').html(percentTBD);
+				$('#total_issue_count').html(addCommas(totalIssues));
+				$('#total_issue_percent').html("100.0%");
+				$('#journal_info_table').css('visibility', 'visible');
+				$('#issue_count_table').css('visibility', 'visible');
+				$('#barchart').css('visibility', 'visible');
+				TBD_flag = false;
+				if ($("#legend").css("display") == "none") {
+					$("#view_legend").css("display", "block");
+				}
+			}
+			function changeSelectedCellAppearance(action) {
+				for (var m = 0; m < selectedIssues.length; m++) {
+					tempCell = document.getElementById(selectedIssues[m]);
+					tempCell.style.color = "#37375E";
+					tempCell.style.fontWeight = "normal";
+					if (action == "hold") {
+						tempCell.style.backgroundColor = "#BFCCA8";
+					} else if (action == "want") {
+						tempCell.style.backgroundColor = "#FFEE88";
+					} else if (action == "clear") {
+						tempCell.style.backgroundColor = "#FFFFFF";
+					}
+				}
+				selectedIssues = [];
+			}
+			function crl_holds(obj, prom) {
+				if (prom == 0) {
+					obj.className += " crl_holds";
+				} else if (prom == 1) {
+					obj.className += " crl_holds promised";
+				}
+			}
+			function crl_does_not_hold(obj, prom) {
+				if (prom == 0) {
+					obj.className += " crl_does_not_hold";
+				} else if (prom == 1) {
+					obj.className += " crl_does_not_hold promised";
+				}
+			}			
+			function parseQueryString() {
+				var query = window.location.search.substring(1);
+				var parms = query.split('&');
+				for (var j=0; j<parms.length; j++) {
+					var pos = parms[j].indexOf('=');
+					if (pos > 0) {
+						var key = parms[j].substring(0,pos);
+						var val = parms[j].substring(pos+1);
+						queryStringParams[key] = val;
+					}
+				}
+			}
+
+		</script>
+	</head>
+	<body onload="init();">
+		<div id="top_navbar">
+			<ul>
+				<li><a href="http://192.168.1.142/CHLA/issue_grid.html">Issue Grid</a></li>
+				<li><a href="http://chla.library.cornell.edu/c/chla/browse/journals.html">CHLA Journal Title Browse</a></li>
+				<!--
+				<li><a href="http://192.168.1.142/cjpahr/Greasemonkey/collection_selector.html">Collection Report</a></li>
+				<li><a href="http://192.168.1.142/cjpahr/Greasemonkey/discipline_selector.html">Discipline Report</a></li>
+				<li><a href="http://192.168.1.142/cjpahr/Greasemonkey/recent_activity_report.html">Activity by Date</a></li>
+				<li><a href="http://192.168.1.142/cjpahr/Greasemonkey/journal_log.html">Journal Log</a></li>
+				<li><a href="http://192.168.1.142/cjpahr/Greasemonkey/issue_checklist.html">Issue Checklist</a></li>
+				<li><a href="http://192.168.1.142/cjpahr/Greasemonkey/delete_a_journal.html">Delete</a></li>
+				<li><a href="http://192.168.1.142/cjpahr/Greasemonkey/Treemaps and Barcharts/thermometer_barchart.html">Statistics</a></li>
+				!-->
+			</ul>
+		</div>
+		<div id="left_navbar">
+		<div id="inner_wrapper">
+			<div id="selection_control_wrapper">
+				<label class="select_label" for="journal_title_box">Enter journal title:</label><br>
+				<input type=text name="journal_title_searchbox" id="journal_title_searchbox" tabindex="0"/>
+				<input id="go_button" name="go_button" type="button" value="Go" tabindex="1"/>
+				<input id="clear_button" name="clear_button" type="button" value="Clear" />
+			</div>
+			<div id="maintenance_button_wrapper">
+				<label class="select_label">Change issue status:</label><br>
+				<div id="radio_wrapper">
+					<input class="filter_radio" id="all_radio" type="radio" name="filter_radios" value="all">
+					<label class="radio_label" for="all_radio">ALL</label>
+					<input class="filter_radio" id="selected_radio" type="radio" name="filter_radios" value="selected" checked>
+					<label class="radio_label" for="selected_radio">SELECTED</label><br>
+				</div>
+				<input id="hold_button" name="hold_button" type="button" value="Hold" />
+				<input id="want_button" name="want_button" type="button" value="Want" />
+				<input id="clear_status_button" name="clear_button" type="button" value="TBD" />
+				<p></p>
+				<input id="deselect_button" name="deselect_button" type="button" value="Deselect all issues" />
+			</div>
+			<div id="paging_wrapper">
+				<div class='pager'>
+					<label class="select_label">Paging: </label><span class='currentPage select_label'></span><label id="paging_label">of</label><span class='totalPages select_label'></span>					<br />
+					<div id="paging_radio_wrapper">
+						<input class="paging_filter_radio" id="paginate_radio" type="radio" name="paging_filter_radios" value="paginate">
+						<label for="paginate_radio">Paginate</label>
+						<input class="paging_filter_radio" id="show_all_radio" type="radio" name="paging_filter_radios" value="showAll" checked>
+						<label for="show_all_radio">All</label>
+						<input class="paging_reverse_checkbox" id="reverse_checkbox" type="checkbox" name="reverse_checkbox" value="reverse">
+						<label for="reverse_checkbox">Rev</label>
+					</div>
+					<input id="previous_button" class='prevPage' name="previous_button" type="button" value="Previous" disabled=true/>
+					<input id="next_button" class='nextPage' name="next_button" type="button" value="Next" disabled=true />
+				</div>
+			</div>
+			</div>
+		</div>
+		<div id="main_content">
+			<a name="top"></a>
+			<h1>Core Historical Literature of Agriculture - Print Holdings</h1>
+			<div id="middle_container">
+				<div id="h2_container">
+					<h2>Issue Grid</h2>
+				</div>
+				<div id="condition_dialog">
+					<div class="condition_label">Select a condition term:</div><img id="close_dialog_button" src="close_button.png" />
+					<select id="status_term_dropdown" name="status_term_dropdown">
+						<option value='acidic' selected="selected">Acidic paper</option>
+						<option value='alkaline'>Alkaline paper</option>
+						<option value='binding varies'>Binding patterns vary</option>
+						<option value='brittle'>Brittle paper</option>
+						<option value='browning'>Browning pages</option>
+						<option value='cockled'>Cockled</option>
+						<option value='faded'>Faded</option>
+						<option value='foxed'>Foxed</option>
+						<option value='highlighting'>Highlighting</option>
+						<option value='insect'>Insect damaged</option>
+						<option value='loose'>Loose</option>
+						<option value='marginalia'>Marginalia</option>
+						<option value='missing'>Missing</option>
+						<option value='mold'>Mold damaged</option>
+						<option value='obscured'>Obscured text block</option>
+						<option value='rebacked'>Rebacked</option>
+						<option value='rehoused poorly'>Rehoused poorly</option>
+						<option value='repaired poorly'>Repaired poorly</option>
+						<option value='repaired soundly'>Repaired soundly</option>
+						<option value='reprints'>Reprints</option>
+						<option value='stained'>Stained</option>
+						<option value='tight binding'>Tight binding</option>
+						<option value='torn'>Torn</option>
+						<option value='underlining'>Underlining</option>
+						<option value='warped'>Warped</option>
+						<option value='yellowed'>Yellowed pages</option>
+					</select>
+					<div class="condition_label">Add a note?<input id="note_checkbox" type="checkbox" unchecked /></div>
+					<textarea id="note_textbox" cols="20" rows="3"></textarea>
+				</div>
+			</div>
+			<div id="result">
+				<div id="journal_info">
+					<table id="journal_info_table" style="visibility: hidden">
+						<thead>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="journal_info_label">Journal title:</td>
+								<td class="journal_info_text" id="journal_title"></td>
+							</tr>
+							<tr>
+								<td class="journal_info_label">CRL journal ID:</td>
+								<td class="journal_info_text" id="crl_journal_id"></td>
+							</tr>
+							<tr>
+								<td class="journal_info_label">CHLA journal ID:</td>
+								<td class="journal_info_text" id="chla_journal_id"></td>
+							</tr>
+							<tr>
+								<td class="journal_info_label">Author:</td>
+								<td class="journal_info_text" id="author"></td>
+							</tr>
+							<tr>
+								<td class="journal_info_label">Place of publication:</td>
+								<td class="journal_info_text" id="place_of_publication"></td>
+							</tr>
+							<tr>
+								<td class="journal_info_label">Published by:</td>
+								<td class="journal_info_text" id="published_by"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div id="issue_count">
+					<table id="issue_count_table" style="visibility: hidden">
+						<thead>
+							<th>Holdings status</th>
+							<th>Number<br />of issues</th>
+							<th>Percent</th>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="header_column_issue_count">CHLA holds:</td>
+								<td class="issue_count_text" id="held_issue_count"></td>
+								<td class="issue_count_text" id="held_issue_percent"></td>
+							</tr>
+							<tr>
+								<td class="header_column_issue_count">CHLA wants:</td>
+								<td class="issue_count_text" id="wanted_issue_count"></td>
+								<td class="issue_count_text" id="wanted_issue_percent"></td>
+							</tr>
+							<tr>
+								<td class="header_column_issue_count">Status to be determined:</td>
+								<td class="issue_count_text" id="tbd_issue_count"></td>
+								<td class="issue_count_text" id="tbd_issue_percent"></td>
+								
+							</tr>
+							<tr>
+								<td class="header_column_issue_count">Total number of issues:</td>
+								<td class="issue_count_text" id="total_issue_count"></td>
+								<td class="issue_count_text" id="total_issue_percent"></td>
+							</tr>
+						</tbody>
+					</table>
+					<div id="legend_wrapper">
+						<div id="view_legend">View cell color legend</div>
+						<div id="legend">
+							<div id="legend_label">CELL COLORS:</div><img id="close_button" src="close_button.png" />
+							<div id="legend_holds">CHLA holds</div>
+							<div id="legend_wants">CHLA wants</div>
+							<div id="legend_unknown">Status TBD</div>
+						</div>
+					</div>
+				</div>
+				<div id="issue_grid">
+					<table id="issue_grid_table">
+						<thead id="issue_grid_table_head">
+						</thead>
+						<tbody id="issue_grid_table_body">
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

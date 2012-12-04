@@ -1,0 +1,561 @@
+html {
+	/*
+	overflow: -moz-scrollbars-vertical; 
+	overflow-y: scroll;
+	*/
+	overflow: auto;
+}
+body {
+	margin: 0;
+	font-family: Arial;
+	font-size: .85em;
+	//background: -moz-linear-gradient(right, #E5EADE, #F8F9F5, #FFFFFF);
+	
+}
+h1 {
+	color: #8F997E;
+	font-family: Georgia;
+	font-size: 2em;
+	font-weight: normal;
+	margin-top: 50px;
+}
+h2 {
+	font-family: Georgia;
+	color: #7A7A94;
+	margin-top: 0;
+}
+#h2_container {
+	float: left;
+	width: 50%;
+}
+#top_navbar {
+	width: 100%;
+	position: fixed;
+	z-index: 100;
+}
+#top_navbar ul {
+	list-style-type: none;
+	background-color: #85887F;
+	color: #FFFFFF;
+	padding: 10px 0px;
+	margin: 0px;
+}
+#top_navbar ul li{
+	display: inline;
+	border-right: 1px solid #FFFFFF;
+	padding: 10px 2px;
+}
+#top_navbar ul li a{
+	font-weight: bold;
+	color: #E3E6DF;
+	text-decoration: none;
+	font-size: .65em;
+}
+#left_navbar {
+	float: left;
+	width: 31%;
+	//position: relative;
+}
+#inner_wrapper {
+	position: fixed;
+	/*top: 10px;
+	left: 10px;*/
+	width: 30%;
+	margin-top: 35px;
+}
+#selection_control_wrapper {
+	background-color: #E3E6DF;
+	border: 1px solid #85887F;
+	height: 85px;
+	margin-top: 19px;
+	margin-left: 21px;
+	margin-right: 50px;
+	padding-top: 7px;
+}
+.select_label {
+	padding-left: 10px;
+	text-align: center;
+	color: #972733;
+	font-family: Georgia;
+	font-weight: bold;
+	font-size: .85em;
+}
+#journal_title_searchbox {
+	margin-left: 10px;
+	margin-top: 7px;
+	width: 11.5em;
+	color: #7A7A94;
+	font-size: .85em;
+}
+#go_button, 
+#clear_button {
+	background-color: #E3E6DF;
+	color: #972733;
+	margin-top: 10px;
+	margin-left: 27px;
+	padding: 2px;
+	font-size: .8em;
+}
+#hold_button,
+#want_button, 
+#clear_status_button {
+	background-color: #E3E6DF;
+	color: #972733;
+	margin-top: 10px;
+	margin-left: 1px;
+	padding: 1px;
+	white-space: normal;
+	width: 33px;
+	font-size: .8em;
+}
+#offered_button {
+	background-color: #E3E6DF;
+	color: #972733;
+	margin-top: 10px;
+	margin-left: 0px;
+	padding: 2px;
+	white-space: normal;
+	width: 44px;
+	font-size: .8em;
+}
+#active_offer_message {
+	text-align: center;
+	margin: 10px 0;
+	font-size: .85em;
+	 
+}
+#active_offer_message a {
+	color: #7A7A94;
+	font-style: italic;
+	font-weight: normal;
+	font-size: .85em; 
+}
+#deselect_button {
+	background-color: #E3E6DF;
+	color: #972733;
+	margin-left: 22px;
+	padding: 5px 5px;
+	font-size: .8em;
+}
+#maintenance_button_wrapper {
+	//background-color: #BFCCA8;
+	background-color: #E3E6DF;
+	color: #7A7A94;
+	border: 1px solid #85887F;
+	font-weight: bold;
+	height: 145px;
+	margin-top: 19px;
+	margin-left: 21px;
+	margin-right: 50px;
+	padding-top: 7px;
+}
+.radio_label{
+	font-size: .85em;
+}
+#radio_wrapper {
+	margin-top: 5px;
+	color: #7A7A94;
+}
+.filter_radio {
+	margin-left: 10px;
+}
+#paging_wrapper {
+	background-color: #E3E6DF;
+	border: 1px solid #85887F;
+	height: 90px;
+	margin-top: 19px;
+	margin-left: 21px;
+	margin-right: 50px;
+	padding-top: 5px;
+}
+#paging_radio_wrapper {
+	padding-left: 5px;
+	margin-top: 10px;
+	color: #7A7A94;
+	font-weight: bold;
+	font-size: .8em;
+}
+.paging_filter_radio {
+	margin: 0px;
+}
+#previous_button,
+#next_button {
+	background-color: #E3E6DF;
+	color: #972733;
+	margin-top: 10px;
+	margin-left: 18px;
+	padding: 2px;
+	font-size: .8em;
+}
+#paging_label {
+	padding-left: 10px;
+	text-align: center;
+	color: #972733;
+	font-family: Georgia;
+	font-weight: bold;
+	font-size: .85em;
+}
+
+#view_legend {
+	display: none;
+	font-weight: normal;
+	font-style: italic;
+	/*font-size: .85em;*/
+	text-align: left;
+	text-decoration: underline;
+	cursor: pointer;
+	font-size: .85em;
+	position: absolute;
+	top: 320px;
+}
+#legend {
+	display: none;
+	float: left;
+	color: #7A7A94;
+	/*border: 1px solid #85887F;*/
+	font-weight: bold;
+	font-size: 1em;
+	margin-left: 12px;
+	width: 140px;
+	position: absolute;
+	top: 320px;
+	left: 505px;
+}
+#legend_label {
+	float: left;
+	padding-left: 5px;
+	font-size: .85em;
+	text-align: center;
+	padding-bottom: 5px;
+}
+#close_button {
+	display: inline;
+	padding-left: 20px;
+	cursor: pointer;
+}
+#legend_holds {
+	background-color: #BFCCA8;
+	text-align: center;
+	margin: auto;
+	padding: 2px;
+	border: 1px dotted #85887F;
+	font-weight: normal;
+	font-size: .75em;
+	color: #37375E;
+	width: 90%;
+}
+#legend_wants {
+	background-color: #FFEE88;
+	text-align: center;
+	margin: auto;
+	padding: 2px;
+	border-right: 1px dotted #85887F;
+	border-bottom: 1px dotted #85887F;
+	border-left: 1px dotted #85887F;
+	font-weight: normal;
+	font-size: .75em;
+	color: #37375E;
+	width: 90%;
+}
+#legend_unknown {
+	text-align: center;
+	margin: auto;
+	padding: 2px;
+	border-right: 1px dotted #85887F;
+	border-bottom: 1px dotted #85887F;
+	border-left: 1px dotted #85887F;
+	font-weight: normal;
+	font-size: .75em;
+	color: #37375E;
+	background-color: #FFFFFF;
+	width: 90%;
+}
+#legend_offered {
+	text-align: center;
+	margin: auto;
+	padding: 2px;
+	border-right: 1px dotted #85887F;
+	border-bottom: 1px dotted #85887F;
+	border-left: 1px dotted #85887F;
+	font-size: .75em;	
+	background-color: #DAA520;
+	color: #FFFFFF;
+	font-weight: bold;
+	width: 90%;
+}
+#legend_replacement {
+	text-align: center;
+	margin: auto;
+	padding: 2px;
+	border-right: 1px dotted #85887F;
+	border-bottom: 1px dotted #85887F;
+	border-left: 1px dotted #85887F;
+	background-color: #809E42;
+	color: #FFFFFF;
+	font-weight: bold;	
+	font-size: .75em;
+	width: 90%;
+}
+#main_content {
+	float: right;
+	width: 75%;
+}
+#journal_info_table {
+	margin-bottom: 20px;
+	float: left;
+	//clear: both;
+	width: 50%;
+}
+.journal_info_label {
+	color: #7A7A94;
+	font-weight: bold;
+	padding-right: 10px;
+	border: 0;
+	vertical-align: top;
+	width: 35%;
+	font-size: .85em;
+}
+.journal_info_text {
+	color: #7A7A94;
+	padding-left: 10px;
+	border: 0;
+}
+#issue_count {
+	float: left;
+	width: 45%;
+	margin-left: 5%;
+}
+#issue_count_table {
+	margin-bottom: 20px;
+	float: left;
+	//clear: both;
+	//width: 70%;
+	//border: 3px solid blue;
+}
+.issue_count_text {
+	color: #37375E;
+	//padding-left: 10px;
+	border: 0;
+	text-align: right;
+	width: 25%;
+	border: 1px dotted #85887F;
+	padding-right: 15px;
+}
+#held_issue_count, #held_issue_percent {
+	background-color: #BFCCA8;
+}
+#wanted_issue_count, #wanted_issue_percent {
+	background-color: #FFEE88;
+}
+#tbd_issue_count, #tbd_issue_percent {
+	background-color: #FFFFFF;
+}
+#total_issue_count, #total_issue_percent {
+	background-color: #E3E6DF;
+	color: #972733;
+}
+#barchart {
+	float: left;
+	width: 45%;
+	margin-left: 5%;
+}
+.bar { 
+	position: relative;
+	text-align: center; 
+	height: 2em; 
+	line-height: 2em;
+	/*
+	border-top: 1px dotted #85887F;                        
+	border-bottom: 1px dotted #85887F;
+	*/
+}
+.graph {
+	position: relative;
+	text-align: center; 
+	height: 2em; 
+	line-height: 2em;
+	/*border: 1px dotted #85887F;*/                       
+}
+#crl_holds_bar {
+	background: #BFCCA8;
+	float: left;
+	color: #37375E;
+	font-weight: bold;
+	font-family: Georgia;
+	letter-spacing: 2px;
+}
+#crl_wants_bar {
+	background: #FFEE88;
+	float: left;
+	color: #37375E;
+}
+#tbd_bar{
+	background: #FFFFFF;
+	float: left;
+	color: #37375E;
+	font-weight: bold;
+	font-family: Georgia;
+	letter-spacing: 2px;
+}
+#issue_grid {
+	clear: both;
+}
+table {
+	color: #37375E;
+	border-collapse: collapse;
+}
+th {
+	padding-top: 7px;
+	padding-bottom: 7px;
+	padding-left: 5px;
+	padding-right: 5px;
+	font-size: .85em;
+	text-align: left;
+	color: #972733;
+	background-color: #E3E6DF;
+	font-family: Georgia;
+	text-align: center;
+	border: 1px solid #85887F;
+}
+td {
+	//border: 1px dotted #C7CCBF;
+	border: 1px dotted #85887F;
+	font-size: .85em;
+}
+td.centered {
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+	border: 1px solid #85887F;
+}
+td.header_column {
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 10px;
+	border: 1px solid #85887F;
+	//background-color: #C7CCBF;
+	background-color: #E3E6DF;
+	color: #972733;
+}
+td.header_column_issue_count {
+	text-align: left;
+	padding-left: 5px;
+	padding-right: 5px;
+	border: 1px solid #85887F;
+	background-color: #E3E6DF;
+	color: #972733;
+}
+td.issue_cell {
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+	border-bottom: 1px dotted #85887F;
+	border-top: 1px dotted #85887F;
+}
+td.last_issue_cell {
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+	//border-bottom: 1px dotted #85887F;
+	//border-top: 1px dotted #85887F;
+	//border-right: 1px dotted #85887F;
+	border-bottom: 0;
+	border-top: 0;
+	border-right: 0;
+}
+td.blank_cell {
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+	border-right: 0;
+	border-bottom: 0;
+	border-top: 0;
+}
+td.crl_holds {
+	background-color: #BFCCA8;
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+	border: 1px dotted #85887F;
+	font-weight: normal;
+}
+td.crl_does_not_hold {
+	background-color: #FFEE88;
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+	font-weight: normal;
+}
+/*
+td.offered_new {
+	background-color: #DAA520;
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+td.offered_replacement {
+	background-color: #809E42;
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+*/
+td.issue_cell.crl_holds.promised {
+	background-color: #809E42;
+	color: #FFFFFF;
+	font-weight: bold;
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+td.issue_cell.crl_does_not_hold.promised {
+	background-color: #DAA520;
+	color: #FFFFFF;
+	font-weight: bold;
+	text-align: center;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+#result {
+	color: #7A7A94;
+	clear: both;
+}
+.ui-autocomplete { 
+	position: absolute; cursor: default; 
+}
+.ui-menu {
+	list-style:none;
+	padding: 1px;
+	margin: 0;
+	display:block;
+	float: left;
+	background-color: #FFF;
+	border: 1px solid #D6CCC0;
+}
+.ui-menu .ui-menu {
+	margin-top: -3px;
+
+}
+.ui-menu .ui-menu-item {
+	margin:0;
+	padding: 0;
+	zoom: 1;
+	float: left;
+	clear: left;
+	width: 100%;
+	font-size: .8em;
+	color: #37375E;
+}
+.ui-menu .ui-menu-item a {
+	text-decoration:none;
+	display:block;
+	padding:.2em .4em;
+	line-height:1.5;
+	zoom:1;
+}
+.ui-menu .ui-menu-item a.ui-state-hover,
+.ui-menu .ui-menu-item a.ui-state-active {
+	font-weight: normal;
+	margin: -1px;
+}
+//.ui-autocomplete-loading { background: white url('autocomplete_loader.gif') right center no-repeat; }
